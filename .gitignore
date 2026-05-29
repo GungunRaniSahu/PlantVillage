@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-error.log*
+
+# Environment files
+.env
+.env.local
+.env*.local
+
+# ML datasets & trained models (too large for git)
+ml/data/
+backend/model/
+*.keras
+*.h5
+*.tflite
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

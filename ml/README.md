@@ -52,9 +52,33 @@ This writes the trained model to `../backend/model/`:
 
 The backend reads these automatically on startup.
 
+## 4. Evaluate (accuracy + confusion matrix)
+
+Measure how good the trained model actually is on the validation set:
+
+```bash
+python evaluate.py
+```
+
+This writes to `ml/reports/`:
+- `metrics.json` — accuracy, macro/weighted F1, mean confidence, per-class scores
+- `classification_report.txt` — precision / recall / F1 per class
+- `confusion_matrix.png` — a heatmap of predictions vs. truth (great for the README)
+
+## 5. Grad-CAM (explainability)
+
+See *which part of the leaf* the model focused on for its prediction:
+
+```bash
+python gradcam.py path/to/leaf.jpg --out gradcam.png
+```
+
+The same logic is wired into the backend, so the web app shows the heatmap
+next to every prediction automatically.
+
 ## Next steps / research extensions
 
 - Expand from one crop to all 38 PlantVillage classes.
 - Fine-tune (unfreeze the top layers of MobileNetV2) for higher accuracy.
-- Add **Grad-CAM** heatmaps to show which part of the leaf the model focused on
-  (great for explaining model decisions in a research setting).
+- ~~Add Grad-CAM heatmaps~~ ✅ done (`gradcam.py` + backend integration).
+- ~~Report accuracy + confusion matrix~~ ✅ done (`evaluate.py`).

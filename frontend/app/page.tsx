@@ -8,6 +8,7 @@ type Prediction = {
   disease: string;
   confidence: number;
   advice: string;
+  heatmap?: string | null;
 };
 
 export default function Home() {
@@ -99,6 +100,42 @@ export default function Home() {
               <p className="mt-1 text-sm text-green-700">
                 Confidence: {(result.confidence * 100).toFixed(1)}%
               </p>
+
+              {result.heatmap && (
+                <div className="mt-4">
+                  <p className="text-sm text-green-700">
+                    Where the model looked (Grad-CAM)
+                  </p>
+                  <div className="mt-2 grid grid-cols-2 gap-3">
+                    {preview && (
+                      <figure>
+                        <img
+                          src={preview}
+                          alt="Original leaf"
+                          className="w-full rounded-lg border border-green-100 object-contain"
+                        />
+                        <figcaption className="mt-1 text-center text-xs text-green-600">
+                          Original
+                        </figcaption>
+                      </figure>
+                    )}
+                    <figure>
+                      <img
+                        src={result.heatmap}
+                        alt="Grad-CAM heatmap"
+                        className="w-full rounded-lg border border-green-100 object-contain"
+                      />
+                      <figcaption className="mt-1 text-center text-xs text-green-600">
+                        Heatmap
+                      </figcaption>
+                    </figure>
+                  </div>
+                  <p className="mt-2 text-xs text-green-600">
+                    Warmer colors = regions that most influenced the diagnosis.
+                  </p>
+                </div>
+              )}
+
               <hr className="my-3 border-green-100" />
               <p className="text-sm text-green-700">Advice</p>
               <p className="mt-1 text-green-900">{result.advice}</p>

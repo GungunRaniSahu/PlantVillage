@@ -83,11 +83,21 @@ async def predict(file: UploadFile = File(...)):
     label = class_names[idx]
     confidence = float(preds[idx])
 
+    # Grad-CAM explainability: heatmap of where the model "looked".
+    heatmap = None
+    try:
+        from gradcam import gradcam_overlay_base64
+
+        heatmap = gradcam_overlay_base64(img, arr, model, pred_index=idx)
+    except Exception as e:
+        print(f"Grad-CAM skipped: {e}")
+
     return {
         "disease": label.replace("___", " — ").replace("_", " "),
         "raw_label": label,
         "confidence": round(confidence, 4),
         "advice": build_advice(label, confidence),
+        "heatmap": heatmap,
     }
 
 

@@ -38,3 +38,15 @@ Build order (recommended): **ml → backend → frontend**
 
 Start small: train on **one crop** (e.g. tomato) with ~10 classes, get the full
 upload → predict → advice flow working end-to-end, then expand to more crops.
+
+## Results
+
+Validation accuracy: **92.3%** (10 tomato classes, 3,198 images) · macro-F1 **0.91** · weighted-F1 **0.92**.
+
+Trained in two phases: a frozen-base head (87.9%), then fine-tuning the top
+MobileNetV2 layers at a low learning rate lifted accuracy to **92.3%** and
+raised the hardest class (early blight) recall from **0.49 → 0.65**.
+
+Per-class precision/recall/F1 and the full metrics are in [`ml/reports/`](ml/reports/).
+
+![Confusion matrix](ml/reports/confusion_matrix.png)

@@ -80,13 +80,44 @@ def build_model(num_classes):
         loss="categorical_crossentropy",
         metrics=["accuracy"],
     )
-    return model
+    return model, base
+
+
+def fine_tune(model, base, train_ds, val_ds, epochs, unfreeze_layers):
+    """Phase 2: unfreeze the top layers of the conv base and train at a low
+    learning rate. Improves accuracy and reduces class confusion (e.g. the
+    early-blight recall) that the frozen-base head can't resolve on its own."""
+    base.trainable = True
+    # Keep the bottom (generic) layers frozen; only fine-tune the top ones.
+    for layer in base.layers[:-unfreeze_layers]:
+        layer.trainable = False
+    # BatchNorm layers should stay in inference mode while fine-tuning.
+    for layer in base.layers:
+        if isinstance(layer, layers.BatchNormalization):
+            layer.trainable = False
+
+    model.compile(
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-5),
+        loss="categorical_crossentropy",
+        metrics=["accuracy"],
+    )
+    trainable = sum(1 for l in base.layers if l.trainable)
+    print(f"\nFine-tuning: {trainable}/{len(base.layers)} base layers unfrozen, lr=1e-5")
+    model.fit(train_ds, validation_data=val_ds, epochs=epochs)
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-dir", default="data")
     parser.add_argument("--epochs", type=int, default=10)
+    parser.add_argument(
+        "--fine-tune-epochs", type=int, default=5,
+        help="phase-2 epochs with top base layers unfrozen (0 to skip)",
+    )
+    parser.add_argument(
+        "--unfreeze-layers", type=int, default=30,
+        help="how many of the top MobileNetV2 layers to unfreeze in phase 2",
+    )
     parser.add_argument(
         "--out-dir", default=os.path.join("..", "backend", "model")
     )
@@ -95,8 +126,13 @@ def main():
     train_ds, val_ds, class_names = load_datasets(args.data_dir)
     print(f"Found {len(class_names)} classes: {class_names}")
 
-    model = build_model(len(class_names))
+    model, base = build_model(len(class_names))
+
+    print(f"\nPhase 1: training head with frozen base ({args.epochs} epochs)")
     model.fit(train_ds, validation_data=val_ds, epochs=args.epochs)
+
+    if args.fine_tune_epochs > 0:
+        fine_tune(model, base, train_ds, val_ds, args.fine_tune_epochs, args.unfreeze_layers)
 
     os.makedirs(args.out_dir, exist_ok=True)
     model.save(os.path.join(args.out_dir, "plant_model.keras"))

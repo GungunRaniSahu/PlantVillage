@@ -24,6 +24,14 @@ export default function Home() {
     setResult(null);
     setError(null);
     setPreview(f ? URL.createObjectURL(f) : null);
+    e.target.value = ""; // allow re-selecting the same file later
+  }
+
+  function onReset() {
+    setFile(null);
+    setPreview(null);
+    setResult(null);
+    setError(null);
   }
 
   async function onAnalyze() {
@@ -50,105 +58,178 @@ export default function Home() {
     }
   }
 
+  const confidence = result ? Math.round(result.confidence * 100) : 0;
+
   return (
-    <main className="min-h-screen bg-green-50 flex flex-col items-center px-4 py-10">
-      <div className="w-full max-w-xl">
-        <h1 className="text-3xl font-bold text-green-900 text-center">
-          🌿 Plant Disease Detector
-        </h1>
-        <p className="mt-2 text-center text-green-700">
-          Upload a photo of a plant leaf to check if it&apos;s healthy.
-        </p>
+    <main className="min-h-screen bg-[#06120d] text-emerald-50">
+      <div className="mx-auto w-full max-w-3xl px-5 py-10">
+        <header className="text-center">
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[11px] font-medium text-emerald-300">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-lime-300" />
+            15 classes · 3 crops · 92% accuracy
+          </span>
+          <h1 className="mt-3 text-3xl font-black tracking-tight text-lime-200">
+            Leaf Doctor
+          </h1>
+          <p className="mt-1.5 text-sm text-emerald-200/60">
+            Upload a leaf photo to get a diagnosis and a Grad-CAM view.
+          </p>
+        </header>
 
-        <div className="mt-8 bg-white rounded-2xl shadow-sm p-6">
-          <label className="block">
-            <span className="sr-only">Choose a leaf photo</span>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={onSelect}
-              className="block w-full text-sm text-gray-600 file:mr-4 file:rounded-full file:border-0 file:bg-green-600 file:px-4 file:py-2 file:text-white hover:file:bg-green-700 file:cursor-pointer cursor-pointer"
-            />
-          </label>
-
-          {preview && (
-            <img
-              src={preview}
-              alt="Selected leaf"
-              className="mt-4 w-full max-h-72 object-contain rounded-lg border border-green-100"
-            />
-          )}
-
-          <button
-            onClick={onAnalyze}
-            disabled={!file || loading}
-            className="mt-4 w-full rounded-full bg-green-600 py-3 font-semibold text-white transition-colors hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {loading ? "Analyzing…" : "Analyze leaf"}
-          </button>
-
-          {error && (
-            <p className="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">
-              {error}
-            </p>
-          )}
-
-          {result && (
-            <div className="mt-6 rounded-xl border border-green-100 bg-green-50 p-4">
-              <p className="text-sm text-green-700">Diagnosis</p>
-              <p className="text-xl font-bold text-green-900">{result.disease}</p>
-              <p className="mt-1 text-sm text-green-700">
-                Confidence: {(result.confidence * 100).toFixed(1)}%
-              </p>
-
-              {result.heatmap && (
-                <div className="mt-4">
-                  <p className="text-sm text-green-700">
-                    Where the model looked (Grad-CAM)
-                  </p>
-                  <div className="mt-2 grid grid-cols-2 gap-3">
-                    {preview && (
-                      <figure>
-                        <img
-                          src={preview}
-                          alt="Original leaf"
-                          className="w-full rounded-lg border border-green-100 object-contain"
-                        />
-                        <figcaption className="mt-1 text-center text-xs text-green-600">
-                          Original
-                        </figcaption>
-                      </figure>
-                    )}
-                    <figure>
-                      <img
-                        src={result.heatmap}
-                        alt="Grad-CAM heatmap"
-                        className="w-full rounded-lg border border-green-100 object-contain"
-                      />
-                      <figcaption className="mt-1 text-center text-xs text-green-600">
-                        Heatmap
-                      </figcaption>
-                    </figure>
+        <div className="mt-7 grid items-start gap-4 md:grid-cols-2">
+          {/* upload panel */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            <label className="group flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-emerald-400/30 bg-emerald-950/30 px-4 py-7 text-center transition-all hover:border-lime-300/60 hover:bg-emerald-900/30">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={onSelect}
+                className="hidden"
+              />
+              {preview ? (
+                <div className="relative w-full">
+                  <img
+                    src={preview}
+                    alt="Selected leaf"
+                    className="max-h-56 w-full rounded-lg object-contain"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center rounded-lg opacity-0 transition group-hover:bg-emerald-950/60 group-hover:opacity-100">
+                    <span className="text-xs font-medium text-emerald-100">
+                      Click to change photo
+                    </span>
                   </div>
-                  <p className="mt-2 text-xs text-green-600">
-                    Warmer colors = regions that most influenced the diagnosis.
-                  </p>
                 </div>
-              )}
-
-              {result.advice && (
+              ) : (
                 <>
-                  <hr className="my-3 border-green-100" />
-                  <p className="text-sm text-green-700">Advice</p>
-                  <p className="mt-1 text-green-900">{result.advice}</p>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-lime-300 text-xl text-emerald-950 transition-transform group-hover:scale-110">
+                    ↑
+                  </div>
+                  <span className="mt-2 text-sm font-medium text-emerald-100">
+                    Click to upload a leaf
+                  </span>
+                  <span className="mt-0.5 text-xs text-emerald-200/50">
+                    JPG or PNG
+                  </span>
                 </>
               )}
-            </div>
-          )}
+            </label>
+
+            {file && (
+              <p className="mt-2 truncate text-center text-xs text-emerald-200/50">
+                {file.name}
+              </p>
+            )}
+
+            <button
+              onClick={onAnalyze}
+              disabled={!file || loading}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-full bg-lime-300 py-2.5 text-sm font-bold text-emerald-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-lime-200 hover:shadow-emerald-400/40 disabled:cursor-not-allowed disabled:opacity-40 disabled:shadow-none"
+            >
+              {loading ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-950/30 border-t-emerald-950" />
+                  Analyzing…
+                </>
+              ) : (
+                "Diagnose leaf"
+              )}
+            </button>
+
+            {error && (
+              <p className="mt-3 rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+                {error}
+              </p>
+            )}
+
+            {(file || result) && (
+              <button
+                onClick={onReset}
+                className="mt-2 w-full text-xs text-emerald-200/50 transition-colors hover:text-emerald-200"
+              >
+                Start over
+              </button>
+            )}
+          </div>
+
+          {/* result panel */}
+          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+            {result ? (
+              <div className="animate-rise space-y-5">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-widest text-emerald-300/60">
+                    Diagnosis
+                  </p>
+                  <p className="mt-1 text-xl font-bold text-lime-200">
+                    {result.disease}
+                  </p>
+                  <div className="mt-2.5 flex items-center gap-3">
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-lime-400 transition-all duration-700"
+                        style={{ width: `${confidence}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-semibold tabular-nums text-emerald-200">
+                      {confidence}%
+                    </span>
+                  </div>
+                </div>
+
+                {result.heatmap && (
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-widest text-emerald-300/60">
+                      Where the model looked
+                    </p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      {preview && (
+                        <figure>
+                          <img
+                            src={preview}
+                            alt="Original leaf"
+                            className="w-full rounded-lg border border-white/10 object-contain"
+                          />
+                          <figcaption className="mt-1 text-center text-xs text-emerald-200/50">
+                            Original
+                          </figcaption>
+                        </figure>
+                      )}
+                      <figure>
+                        <img
+                          src={result.heatmap}
+                          alt="Grad-CAM heatmap"
+                          className="w-full rounded-lg border border-white/10 object-contain"
+                        />
+                        <figcaption className="mt-1 text-center text-xs text-emerald-200/50">
+                          Grad-CAM
+                        </figcaption>
+                      </figure>
+                    </div>
+                  </div>
+                )}
+
+                {result.advice && (
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-widest text-emerald-300/60">
+                      Advice
+                    </p>
+                    <p className="mt-1 text-sm leading-relaxed text-emerald-100/80">
+                      {result.advice}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-full min-h-[180px] flex-col items-center justify-center text-center">
+                <p className="text-sm text-emerald-200/40">
+                  Your diagnosis will appear here
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
-        <p className="mt-6 text-center text-xs text-green-600">
-          Backend: {API_URL}
+        <p className="mt-8 text-center text-[11px] text-emerald-200/30">
+          {API_URL}
         </p>
       </div>
     </main>

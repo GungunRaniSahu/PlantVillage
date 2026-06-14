@@ -24,6 +24,7 @@ load_dotenv()
 
 MODEL_DIR = os.path.join(os.path.dirname(__file__), "model")
 IMG_SIZE = (224, 224)
+CONFIDENCE_THRESHOLD = 0.60  # below this, flag the prediction as low-confidence
 
 app = FastAPI(title="Plant Disease Detector API")
 
@@ -83,6 +84,16 @@ async def predict(file: UploadFile = File(...)):
     label = class_names[idx]
     confidence = float(preds[idx])
 
+    # Top-3 predictions (helps when the model is unsure between look-alikes).
+    def pretty(name: str) -> str:
+        return name.replace("___", " — ").replace("_", " ")
+
+    top_idx = np.argsort(preds)[::-1][:3]
+    top3 = [
+        {"disease": pretty(class_names[i]), "confidence": round(float(preds[i]), 4)}
+        for i in top_idx
+    ]
+
     # Grad-CAM explainability: heatmap of where the model "looked".
     heatmap = None
     try:
@@ -93,9 +104,11 @@ async def predict(file: UploadFile = File(...)):
         print(f"Grad-CAM skipped: {e}")
 
     return {
-        "disease": label.replace("___", " — ").replace("_", " "),
+        "disease": pretty(label),
         "raw_label": label,
         "confidence": round(confidence, 4),
+        "top3": top3,
+        "low_confidence": confidence < CONFIDENCE_THRESHOLD,
         # "advice": build_advice(label, confidence),  # Groq AI advice disabled
         "heatmap": heatmap,
     }

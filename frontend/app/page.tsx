@@ -7,8 +7,10 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 type Prediction = {
   disease: string;
   confidence: number;
-  advice: string;
+  advice?: string;
   heatmap?: string | null;
+  top3?: { disease: string; confidence: number }[];
+  low_confidence?: boolean;
 };
 
 export default function Home() {
@@ -155,6 +157,13 @@ export default function Home() {
           <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
             {result ? (
               <div className="animate-rise space-y-5">
+                {result.low_confidence && (
+                  <p className="rounded-lg border border-amber-400/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                    Low confidence — this may not be a clear pepper, potato, or
+                    tomato leaf.
+                  </p>
+                )}
+
                 <div>
                   <p className="text-[11px] font-medium uppercase tracking-widest text-emerald-300/60">
                     Diagnosis
@@ -174,6 +183,27 @@ export default function Home() {
                     </span>
                   </div>
                 </div>
+
+                {result.top3 && result.top3.length > 1 && (
+                  <div>
+                    <p className="text-[11px] font-medium uppercase tracking-widest text-emerald-300/60">
+                      Other possibilities
+                    </p>
+                    <ul className="mt-2 space-y-1.5">
+                      {result.top3.slice(1).map((t) => (
+                        <li
+                          key={t.disease}
+                          className="flex items-center justify-between gap-2 text-xs text-emerald-100/70"
+                        >
+                          <span className="truncate">{t.disease}</span>
+                          <span className="tabular-nums text-emerald-200/50">
+                            {Math.round(t.confidence * 100)}%
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
 
                 {result.heatmap && (
                   <div>

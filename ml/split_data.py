@@ -58,6 +58,14 @@ def main():
         print(f"No class folders with images found in {args.src}")
         return
 
+    # Wipe any previous split so re-runs (e.g. different seed/ratio or
+    # tomato-only -> all classes) can't leak stale images across train/val.
+    for split in ("train", "val"):
+        old = os.path.join(args.out, split)
+        if os.path.isdir(old):
+            shutil.rmtree(old)
+            print(f"Cleared old {old}/")
+
     train_total = val_total = 0
     for name, images in classes:
         random.shuffle(images)

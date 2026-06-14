@@ -83,7 +83,24 @@ def build_model(num_classes):
     return model, base
 
 
-def fine_tune(model, base, train_ds, val_ds, epochs, unfreeze_layers):
+def compute_class_weights(data_dir, class_names):
+    """Inverse-frequency ('balanced') weights so under-represented classes
+    (e.g. Potato_healthy, mosaic virus) aren't drowned out by the big ones."""
+    exts = (".jpg", ".jpeg", ".png")
+    counts = []
+    for name in class_names:
+        folder = os.path.join(data_dir, "train", name)
+        counts.append(sum(1 for f in os.listdir(folder) if f.lower().endswith(exts)))
+    total = sum(counts)
+    n = len(class_names)
+    weights = {i: total / (n * c) for i, c in enumerate(counts)}
+    print("Class weights (inverse-frequency):")
+    for i, name in enumerate(class_names):
+        print(f"  {name}: {counts[i]} imgs -> weight {weights[i]:.2f}")
+    return weights
+
+
+def fine_tune(model, base, train_ds, val_ds, epochs, unfreeze_layers, class_weight=None):
     """Phase 2: unfreeze the top layers of the conv base and train at a low
     learning rate. Improves accuracy and reduces class confusion (e.g. the
     early-blight recall) that the frozen-base head can't resolve on its own."""
@@ -103,7 +120,7 @@ def fine_tune(model, base, train_ds, val_ds, epochs, unfreeze_layers):
     )
     trainable = sum(1 for l in base.layers if l.trainable)
     print(f"\nFine-tuning: {trainable}/{len(base.layers)} base layers unfrozen, lr=1e-5")
-    model.fit(train_ds, validation_data=val_ds, epochs=epochs)
+    model.fit(train_ds, validation_data=val_ds, epochs=epochs, class_weight=class_weight)
 
 
 def main():
@@ -119,6 +136,10 @@ def main():
         help="how many of the top MobileNetV2 layers to unfreeze in phase 2",
     )
     parser.add_argument(
+        "--no-class-weights", action="store_true",
+        help="disable inverse-frequency class weighting (on by default)",
+    )
+    parser.add_argument(
         "--out-dir", default=os.path.join("..", "backend", "model")
     )
     args = parser.parse_args()
@@ -126,13 +147,16 @@ def main():
     train_ds, val_ds, class_names = load_datasets(args.data_dir)
     print(f"Found {len(class_names)} classes: {class_names}")
 
+    class_weight = None if args.no_class_weights else compute_class_weights(args.data_dir, class_names)
+
     model, base = build_model(len(class_names))
 
     print(f"\nPhase 1: training head with frozen base ({args.epochs} epochs)")
-    model.fit(train_ds, validation_data=val_ds, epochs=args.epochs)
+    model.fit(train_ds, validation_data=val_ds, epochs=args.epochs, class_weight=class_weight)
 
     if args.fine_tune_epochs > 0:
-        fine_tune(model, base, train_ds, val_ds, args.fine_tune_epochs, args.unfreeze_layers)
+        fine_tune(model, base, train_ds, val_ds, args.fine_tune_epochs,
+                  args.unfreeze_layers, class_weight=class_weight)
 
     os.makedirs(args.out_dir, exist_ok=True)
     model.save(os.path.join(args.out_dir, "plant_model.keras"))

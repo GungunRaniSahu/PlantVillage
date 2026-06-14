@@ -96,33 +96,34 @@ async def predict(file: UploadFile = File(...)):
         "disease": label.replace("___", " — ").replace("_", " "),
         "raw_label": label,
         "confidence": round(confidence, 4),
-        "advice": build_advice(label, confidence),
+        # "advice": build_advice(label, confidence),  # Groq AI advice disabled
         "heatmap": heatmap,
     }
 
 
-def build_advice(label: str, confidence: float) -> str:
-    """Use Groq to generate friendly treatment advice (optional)."""
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        return "Set GROQ_API_KEY in backend/.env to enable AI treatment advice."
-
-    try:
-        from groq import Groq
-
-        client = Groq(api_key=api_key)
-        readable = label.replace("___", " ").replace("_", " ")
-        prompt = (
-            f"A plant leaf was classified as '{readable}' "
-            f"(model confidence {confidence:.0%}). "
-            "In 2-3 simple sentences for a farmer, explain what this means and "
-            "the main treatment steps. If it is healthy, just reassure them briefly."
-        )
-        resp = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=200,
-        )
-        return resp.choices[0].message.content.strip()
-    except Exception as e:
-        return f"(Could not fetch AI advice: {e})"
+# --- Groq AI treatment advice (disabled) ---------------------------------
+# def build_advice(label: str, confidence: float) -> str:
+#     """Use Groq to generate friendly treatment advice (optional)."""
+#     api_key = os.getenv("GROQ_API_KEY")
+#     if not api_key:
+#         return "Set GROQ_API_KEY in backend/.env to enable AI treatment advice."
+#
+#     try:
+#         from groq import Groq
+#
+#         client = Groq(api_key=api_key)
+#         readable = label.replace("___", " ").replace("_", " ")
+#         prompt = (
+#             f"A plant leaf was classified as '{readable}' "
+#             f"(model confidence {confidence:.0%}). "
+#             "In 2-3 simple sentences for a farmer, explain what this means and "
+#             "the main treatment steps. If it is healthy, just reassure them briefly."
+#         )
+#         resp = client.chat.completions.create(
+#             model="llama-3.3-70b-versatile",
+#             messages=[{"role": "user", "content": prompt}],
+#             max_tokens=200,
+#         )
+#         return resp.choices[0].message.content.strip()
+#     except Exception as e:
+#         return f"(Could not fetch AI advice: {e})"

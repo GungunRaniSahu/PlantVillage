@@ -41,11 +41,14 @@ upload → predict → advice flow working end-to-end, then expand to more crops
 
 ## Results
 
-Validation accuracy: **92.3%** (10 tomato classes, 3,198 images) · macro-F1 **0.91** · weighted-F1 **0.92**.
+Validation accuracy: **92.0%** (15 classes across 3 crops — Pepper, Potato, Tomato;
+4,122 images) · macro-F1 **0.91** · weighted-F1 **0.92**.
 
-Trained in two phases: a frozen-base head (87.9%), then fine-tuning the top
-MobileNetV2 layers at a low learning rate lifted accuracy to **92.3%** and
-raised the hardest class (early blight) recall from **0.49 → 0.65**.
+Trained in two phases — a frozen-base head, then fine-tuning the top MobileNetV2
+layers at a low learning rate — with inverse-frequency **class weighting** so
+small classes hold up (e.g. Potato healthy, only 152 images, scores 0.91 F1).
+The hardest class is tomato early blight (0.54 recall); it visually overlaps the
+other tomato blights and spots.
 
 Per-class precision/recall/F1 and the full metrics are in [`ml/reports/`](ml/reports/).
 

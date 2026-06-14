@@ -136,9 +136,13 @@ export default function Home() {
                 </div>
               )}
 
-              <hr className="my-3 border-green-100" />
-              <p className="text-sm text-green-700">Advice</p>
-              <p className="mt-1 text-green-900">{result.advice}</p>
+              {result.advice && (
+                <>
+                  <hr className="my-3 border-green-100" />
+                  <p className="text-sm text-green-700">Advice</p>
+                  <p className="mt-1 text-green-900">{result.advice}</p>
+                </>
+              )}
             </div>
           )}
         </div>

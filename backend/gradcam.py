@@ -46,12 +46,20 @@ def make_gradcam_heatmap(img_array, model, pred_index=None):
     for layer in pre_layers:
         x = _call(layer, x)
 
+    last = len(post_layers) - 1
     with tf.GradientTape() as tape:
         conv_out = base_features(x, training=False)
         tape.watch(conv_out)
         y = conv_out
-        for layer in post_layers:
-            y = _call(layer, y)
+        for i, layer in enumerate(post_layers):
+            # For the final Dense, use PRE-softmax logits: when the model is
+            # near 100% the softmax gradient ~0, which makes the heatmap noise.
+            if i == last and isinstance(layer, tf.keras.layers.Dense):
+                y = tf.linalg.matmul(y, layer.kernel)
+                if layer.use_bias:
+                    y = y + layer.bias
+            else:
+                y = _call(layer, y)
         preds = y
         if pred_index is None:
             pred_index = int(tf.argmax(preds[0]))

@@ -1,8 +1,9 @@
+# Requires Python 3.11 or 3.12 — TensorFlow has no wheels for 3.13/3.14.
 fastapi
 uvicorn[standard]
 python-multipart
 pillow
 numpy
 tensorflow
-groq
+keras>=3.14          # model is saved with Keras 3.14+; older versions fail to load
 python-dotenv
